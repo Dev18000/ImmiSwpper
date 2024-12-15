@@ -1,0 +1,83 @@
+﻿@page "/"
+@rendermode InteractiveServer
+@inject IJSRuntime JSRuntime
+
+<div id="content" style="overflow-y: auto; height: 100vh;" @ref="ContentContainer">
+    @foreach (var item in Items)
+    {
+        <div class="item">
+            <img src="@item" alt="Loaded Image" />
+        </div>
+    }
+</div>
+
+<div id="loader" style="text-align: center; display: @(IsLoading ? "block" : "none")">
+    Загрузка...
+</div>
+
+@code {
+    private List<string> Items = new();
+    private bool IsLoading = false;
+    private ElementReference ContentContainer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        LoadInitialContent();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("registerInfiniteScroll", DotNetObjectReference.Create(this));
+        }
+    }
+
+    private void LoadInitialContent()
+    {
+        for (int i = 0; i < 3; i++)
+        {
+            Items.Add("https://cdn.pixabay.com/photo/2020/02/25/19/16/stawberry-4879794_640.jpg");
+        }
+    }
+
+    [JSInvokable]
+    public async Task LoadMoreContent()
+    {
+        if (IsLoading) return;
+
+        IsLoading = true;
+        StateHasChanged();
+
+        await Task.Delay(1000); //Имитация асинхронной загрузки https://ru.stackoverflow.com/a/1594955/264178
+
+        for (int i = 0; i < 3; i++)
+        {
+            Items.Add("https://cdn.pixabay.com/photo/2020/02/25/19/16/stawberry-4879794_640.jpg");
+        }
+
+        IsLoading = false;
+        StateHasChanged();
+    }
+}
+
+<style>
+    .item {
+        padding: 20px;
+        border-bottom: 1px solid #ddd;
+        background-color: #fff;
+        margin-bottom: 10px;
+        text-align: center;
+    }
+
+        .item img {
+            max-width: 100%;
+            height: auto;
+        }
+
+    #loader {
+        font-size: 16px;
+        padding: 10px;
+        color: #555;
+    }
+</style>
